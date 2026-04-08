@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trimurti Business Tracker v4.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────────────────────── */
+    :root {
+      --bg:        #0a0b0f;
+      --surface:   #12141a;
+      --panel:     #1a1d27;
+      --border:    rgba(255,255,255,0.07);
+      --accent:    #f5a623;
+      --accent2:   #e855e8;
+      --green:     #22d87a;
+      --red:       #ff4d6d;
+      --blue:      #4d9fff;
+      --text:      #e8eaf0;
+      --muted:     #7a7d8e;
+      --font:      'Syne', sans-serif;
+      --mono:      'DM Mono', monospace;
+      --radius:    16px;
+      --radius-sm: 10px;
+      --shadow:    0 24px 64px rgba(0,0,0,0.5);
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────────────── */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Animated Background ───────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 600px 400px at 10% 20%, rgba(245,166,35,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 500px at 90% 80%, rgba(232,85,232,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(77,159,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Layout ────────────────────────────────────────────────────────── */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 20px;
+    }
+    .full-width { grid-column: 1 / -1; }
+
+    /* ─── Header ────────────────────────────────────────────────────────── */
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      animation: fadeDown 0.6s ease both;
+    }
+    .header-brand { display: flex; align-items: center; gap: 16px; }
+    .header-logo {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6em;
+      box-shadow: 0 8px 24px rgba(245,166,35,0.3);
+    }
+    .header-title { font-size: 1.7em; font-weight: 800; letter-spacing: -0.5px; }
+    .header-title span { color: var(--accent); }
+    .header-sub { font-size: 0.8em; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+    .header-badge {
+      font-family: var(--mono);
+      font-size: 0.78em;
+      background: rgba(245,166,35,0.12);
+      border: 1px solid rgba(245,166,35,0.3);
+      color: var(--accent);
+      padding: 6px 14px;
+      border-radius: 30px;
+    }
+
+    /* ─── Panel Base ────────────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .panel-title {
+      font-size: 0.7em;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ─── Vehicle Tabs ──────────────────────────────────────────────────── */
+    .vehicle-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .vtab {
+      padding: 12px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 0.85em;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .vtab .v-icon { font-size: 1.5em; }
+    .vtab:hover { border-color: rgba(245,166,35,0.4); color: var(--text); }
+    .vtab.active {
+      background: linear-gradient(135deg, rgba(245,166,35,0.15), rgba(232,85,232,0.1));
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 4px 16px rgba(245,166,35,0.2);
+    }
+
+    /* ─── Form ──────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.75em;
+      font-family: var(--mono);
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.95em;
+      transition: all 0.2s ease;
+      appearance: none;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(245,166,35,0.05);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.1);
+    }
+    .form-control::placeholder { color: var(--muted); }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ─── Buttons ───────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 20px;
+      border: none; border-radius: var(--radius-sm);
+      font-family: var(--font); font-size: 0.9em; font-weight: 700;
+      cursor: pointer; transition: all 0.2s ease;
+      letter-spacing: 0.5px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #f7bb50);
+      color: #0a0b0f;
+      width: 100%;
+      box-shadow: 0 6px 20px rgba(245,166,35,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(245,166,35,0.45); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-danger {
+      background: rgba(255,77,109,0.15);
+      color: var(--red);
+      border: 1px solid rgba(255,77,109,0.3);
+      padding: 8px 14px;
+      font-size: 0.78em;
+    }
+    .btn-danger:hover { background: rgba(255,77,109,0.25); }
+
+    /* ─── Report Tabs ───────────────────────────────────────────────────── */
+    .report-tabs {
+      display: flex; gap: 8px; margin-bottom: 24px;
+    }
+    .rtab {
+      padding: 9px 18px;
+      border-radius: 30px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.78em;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+    .rtab:hover { border-color: var(--accent); color: var(--text); }
+    .rtab.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ─── Stats Grid ────────────────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .stat-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px 16px;
+      transition: transform 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-box::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-bar, var(--accent));
+    }
+    .stat-box:hover { transform: translateY(-3px); }
+    .stat-icon { font-size: 1.4em; margin-bottom: 10px; }
+    .stat-val {
+      font-size: 1.4em; font-weight: 800;
+      font-family: var(--mono);
+      color: var(--stat-color, var(--text));
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat-lbl { font-size: 0.72em; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ─── Chart Panel ───────────────────────────────────────────────────── */
+    .chart-wrap {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 20px;
+      align-items: center;
+    }
+    .chart-canvas-wrap { position: relative; height: 300px; }
+    .chart-legend { display: flex; flex-direction: column; gap: 12px; }
+    .legend-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.85em;
+    }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+    .legend-label { color: var(--muted); }
+    .legend-val { font-family: var(--mono); font-weight: 600; margin-left: auto; }
+
+    /* ─── Table ─────────────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.85em;
+    }
+    thead tr {
+      background: var(--panel);
+    }
+    th {
+      padding: 14px 16px;
+      font-family: var(--mono); font-size: 0.7em;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--muted); font-weight: 500;
+      text-align: left; white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-family: var(--mono);
+      vertical-align: middle;
+    }
+    tbody tr { transition: background 0.15s ease; }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+    .pos { color: var(--green); font-weight: 600; }
+    .neg { color: var(--red); font-weight: 600; }
+    .badge-vehicle {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      background: rgba(245,166,35,0.1);
+      border: 1px solid rgba(245,166,35,0.25);
+      color: var(--accent);
+    }
+
+    /* ─── Empty State ───────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 48px 20px;
+      color: var(--muted); font-family: var(--mono); font-size: 0.85em;
+    }
+    .empty-state .empty-icon { font-size: 2.5em; margin-bottom: 12px; }
+
+    /* ─── Toast ─────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 22px;
+      font-family: var(--mono); font-size: 0.85em;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 999;
+      pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success .t-icon { color: var(--green); }
+    #toast.error .t-icon { color: var(--red); }
+
+    /* ─── Keyframes ─────────────────────────────────────────────────────── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--panel); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* ─── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+      .chart-wrap { grid-template-columns: 1fr; }
+      .chart-legend { flex-direction: row; flex-wrap: wrap; }
+    }
+    @media (max-width: 560px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+      .header { flex-direction: column; gap: 12px; text-align: center; }
+    }
+
+    /* ─── Divider ───────────────────────────────────────────────────────── */
+    .divider {
+      height: 1px; background: var(--border); margin: 20px 0;
+    }
+
+    /* ─── Section label row ─────────────────────────────────────────────── */
+    .section-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="header full-width">
+    <div class="header-brand">
+      <div class="header-logo">🚀</div>
+      <div>
+        <div class="header-title">Trimurti <span>Tracker</span></div>
+        <div class="header-sub">by @TrimurtiEnterprises · v4.0</div>
+      </div>
+    </div>
+    <div class="header-badge" id="liveClock">--:-- --</div>
+  </header>
+
+  <!-- ── Left Panel: Entry Form ──────────────────────────────────────────── -->
+  <aside class="panel" style="animation: fadeUp 0.5s 0.1s ease both; opacity:0;">
+    <div class="panel-title">Vehicle</div>
+    <div class="vehicle-tabs">
+      <button class="vtab active" data-vehicle="Bike"     onclick="selectVehicle(this)"><span class="v-icon">🏍️</span>Bike</button>
+      <button class="vtab"        data-vehicle="Scooty"   onclick="selectVehicle(this)"><span class="v-icon">🛵</span>Scooty</button>
+      <button class="vtab"        data-vehicle="3Wheeler" onclick="selectVehicle(this)"><span class="v-icon">🚜</span>3-Wheeler</button>
+      <button class="vtab"        data-vehicle="4Wheeler" onclick="selectVehicle(this)"><span class="v-icon">🚛</span>4-Wheeler</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="panel-title">Daily Entry</div>
+
+    <div class="form-group">
+      <label>📅 Date</label>
+      <input type="date" class="form-control" id="dateInput"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>💰 Income (₹)</label>
+        <input type="number" class="form-control" id="incomeInput" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label>💸 Expense (₹)</label>
+        <input type="number" class="form-control" id="expenseInput" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>🚗 KM Driven</label>
+      <input type="number" class="form-control" id="kmInput" placeholder="0" min="0"/>
+    </div>
+    <div class="form-group">
+      <label>📝 Notes (optional)</label>
+      <input type="text" class="form-control" id="notesInput" placeholder="Any remark..."/>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveEntry()">
+      💾 Save Entry
+    </button>
+  </aside>
+
+  <!-- ── Right Panel: Dashboard ──────────────────────────────────────────── -->
+  <main style="display:flex; flex-direction:column; gap:20px; animation: fadeUp 0.5s 0.2s ease both; opacity:0;">
+
+    <!-- Report tabs + stats -->
+    <div class="panel">
+      <div class="section-top">
+        <div class="panel-title" style="margin:0;">Statistics</div>
+        <div class="report-tabs">
+          <button class="rtab active" onclick="setReport('weekly',this)">Week</button>
+          <button class="rtab"        onclick="setReport('monthly',this)">Month</button>
+          <button class="rtab"        onclick="setReport('yearly',this)">Year</button>
+          <button class="rtab"        onclick="setReport('all',this)">All</button>
+        </div>
+      </div>
+      <div class="stats-row" id="statsRow">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="panel">
+      <div class="panel-title">Income vs Expense</div>
+      <div class="chart-wrap">
+        <div class="chart-canvas-wrap">
+          <canvas id="mainChart"></canvas>
+        </div>
+        <div class="chart-legend" id="chartLegend"></div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="panel">
+      <div class="section-top">
+        <div class="panel-title" style="margin:0;">Transaction Log</div>
+        <button class="btn btn-danger" onclick="clearAllData()">🗑 Clear All</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Vehicle</th>
+              <th>Income</th>
+              <th>Expense</th>
+              <th>Profit/Loss</th>
+              <th>KM</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <div class="empty-icon">📭</div>
+          No entries found for this period.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<!-- Toast -->
+<div id="toast"><span class="t-icon">●</span><span id="toastMsg"></span></div>
+
+<!-- ─── JavaScript ──────────────────────────────────────────────────────── -->
+<script>
+/* ─── State ─────────────────────────────────────────────────────────────── */
+const DB_KEY = 'trimurti_v4';
+let state = {
+  vehicle: 'Bike',
+  period: 'weekly',
+  chart: null,
+};
+
+/* ─── Storage Helpers ───────────────────────────────────────────────────── */
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+  catch { return []; }
+}
+function saveDB(data) {
+  localStorage.setItem(DB_KEY, JSON.stringify(data));
+}
+
+/* ─── Init ──────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date
+  document.getElementById('dateInput').value = today();
+  // Clock
+  updateClock();
+  setInterval(updateClock, 1000);
+  // Render
+  render();
+});
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent =
+    now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+/* ─── Vehicle Select ────────────────────────────────────────────────────── */
+function selectVehicle(el) {
+  document.querySelectorAll('.vtab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.vehicle = el.dataset.vehicle;
+  render();
+}
+
+/* ─── Period Select ─────────────────────────────────────────────────────── */
+function setReport(period, el) {
+  document.querySelectorAll('.rtab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.period = period;
+  render();
+}
+
+/* ─── Save Entry ────────────────────────────────────────────────────────── */
+function saveEntry() {
+  const date    = document.getElementById('dateInput').value;
+  const income  = parseFloat(document.getElementById('incomeInput').value)  || 0;
+  const expense = parseFloat(document.getElementById('expenseInput').value) || 0;
+  const km      = parseFloat(document.getElementById('kmInput').value)      || 0;
+  const notes   = document.getElementById('notesInput').value.trim();
+
+  if (!date) { toast('Please select a date', 'error'); return; }
+  if (income === 0 && expense === 0 && km === 0) {
+    toast('Please enter at least one value', 'error'); return;
+  }
+
+  const db = loadDB();
+  db.push({
+    id: Date.now(),
+    vehicle: state.vehicle,
+    date, income, expense, km, notes
+  });
+  saveDB(db);
+
+  // Clear fields
+  ['incomeInput','expenseInput','kmInput','notesInput'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  toast('Entry saved successfully ✓', 'success');
+  render();
+}
+
+/* ─── Clear All ─────────────────────────────────────────────────────────── */
+function clearAllData() {
+  if (!confirm('Delete ALL data? This cannot be undone.')) return;
+  saveDB([]);
+  toast('All data cleared', 'error');
+  render();
+}
+
+/* ─── Filter Data ───────────────────────────────────────────────────────── */
+function filterData() {
+  const db  = loadDB();
+  const now = new Date();
+  let from;
+
+  if (state.period === 'weekly') {
+    from = new Date(now); from.setDate(from.getDate() - 6); from.setHours(0,0,0,0);
+  } else if (state.period === 'monthly') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (state.period === 'yearly') {
+    from = new Date(now.getFullYear(), 0, 1);
+  } else {
+    from = new Date(0);
+  }
+
+  return db
+    .filter(e => e.vehicle === state.vehicle && new Date(e.date) >= from)
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
+}
+
+/* ─── Totals ────────────────────────────────────────────────────────────── */
+function calcTotals(data) {
+  return data.reduce((t, e) => ({
+    income:  t.income  + e.income,
+    expense: t.expense + e.expense,
+    km:      t.km      + e.km,
+  }), { income:0, expense:0, km:0 });
+}
+
+/* ─── Render ────────────────────────────────────────────────────────────── */
+function render() {
+  const data   = filterData();
+  const totals = calcTotals(data);
+  const profit = totals.income - totals.expense;
+
+  renderStats(totals, profit);
+  renderChart(totals);
+  renderTable(data);
+}
+
+/* ─── Stats ─────────────────────────────────────────────────────────────── */
+function renderStats(totals, profit) {
+  const fmt = v => '₹' + v.toLocaleString('en-IN', { maximumFractionDigits:0 });
+  const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-box" style="--accent-bar: var(--blue)">
+      <div class="stat-icon">💰</div>
+      <div class="stat-val">${fmt(totals.income)}</div>
+      <div class="stat-lbl">Total Income</div>
+    </div>
+    <div class="stat-box" style="--accent-bar: var(--red)">
+      <div class="stat-icon">💸</div>
+      <div class="stat-val">${fmt(totals.expense)}</div>
+      <div class="stat-lbl">Total Expense</div>
+    </div>
+    <div class="stat-box" style="--accent-bar: ${profitColor}">
+      <div class="stat-icon">${profit >= 0 ? '📈' : '📉'}</div>
+      <div class="stat-val" style="color:${profitColor}">${fmt(profit)}</div>
+      <div class="stat-lbl">Net Profit</div>
+    </div>
+    <div class="stat-box" style="--accent-bar: var(--accent)">
+      <div class="stat-icon">🚗</div>
+      <div class="stat-val">${totals.km.toLocaleString('en-IN')} km</div>
+      <div class="stat-lbl">KM Driven</div>
+    </div>
+  `;
+}
+
+/* ─── Chart ─────────────────────────────────────────────────────────────── */
+function renderChart(totals) {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if (state.chart) { state.chart.destroy(); }
+
+  const profit = totals.income - totals.expense;
+  const fmt = v => '₹' + v.toLocaleString('en-IN', { maximumFractionDigits:0 });
+
+  state.chart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Income', 'Expense'],
+      datasets: [{
+        data: [totals.income || 0, totals.expense || 0],
+        backgroundColor: ['rgba(34,216,122,0.85)', 'rgba(255,77,109,0.85)'],
+        borderColor:     ['rgba(34,216,122,0.3)',  'rgba(255,77,109,0.3)'],
+        borderWidth: 1,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ₹${ctx.parsed.toLocaleString('en-IN')}`
+          },
+          backgroundColor: '#1a1d27',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#e8eaf0',
+          bodyColor: '#7a7d8e',
+          padding: 12,
+        }
+      }
+    }
+  });
+
+  // Custom legend
+  document.getElementById('chartLegend').innerHTML = `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:rgba(34,216,122,0.85)"></div>
+      <span class="legend-label">Income</span>
+      <span class="legend-val">${fmt(totals.income)}</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:rgba(255,77,109,0.85)"></div>
+      <span class="legend-label">Expense</span>
+      <span class="legend-val">${fmt(totals.expense)}</span>
+    </div>
+    <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${profit>=0?'var(--green)':'var(--red)'}"></div>
+      <span class="legend-label">Net Profit</span>
+      <span class="legend-val" style="color:${profit>=0?'var(--green)':'var(--red)'}">${fmt(profit)}</span>
+    </div>
+  `;
+}
+
+/* ─── Table ─────────────────────────────────────────────────────────────── */
+function renderTable(data) {
+  const tbody      = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+
+  if (data.length === 0) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+  emptyState.style.display = 'none';
+
+  const vIcons = { Bike:'🏍️', Scooty:'🛵', '3Wheeler':'🚜', '4Wheeler':'🚛' };
+  const fmt = v => '₹' + v.toLocaleString('en-IN', { maximumFractionDigits:0 });
+  const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+
+  tbody.innerHTML = data.map(e => {
+    const profit = e.income - e.expense;
+    return `
+      <tr>
+        <td>${fmtDate(e.date)}</td>
+        <td><span class="badge-vehicle">${vIcons[e.vehicle] || '🚗'} ${e.vehicle}</span></td>
+        <td class="pos">${fmt(e.income)}</td>
+        <td class="neg">${fmt(e.expense)}</td>
+        <td class="${profit >= 0 ? 'pos' : 'neg'}">${profit >= 0 ? '+' : ''}${fmt(profit)}</td>
+        <td>${e.km.toLocaleString('en-IN')}</td>
+        <td style="color:var(--muted)">${e.notes || '—'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ─── Toast ─────────────────────────────────────────────────────────────── */
+let toastTimer = null;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  el.className = type;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
